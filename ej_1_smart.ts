@@ -19,9 +19,9 @@
 //      h. Obtener el nombre de todos los dispositivos.
 
 abstract class SmartDevice {
-    id: string;
-    name: string;
-    isOn: boolean;
+    protected id: string;
+    protected name: string;
+    protected isOn: boolean;
 
     constructor(id: string, name: string) {
         this.id = id;
@@ -49,9 +49,9 @@ abstract class SmartDevice {
 }
 
 class SmartTV extends SmartDevice {
-    volume: number;
-    currentChannel: number;
-    isMuted: boolean;
+    protected volume: number;
+    protected currentChannel: number;
+    protected isMuted: boolean;
 
     constructor(id: string, name: string) {
         super(id, name);
@@ -87,6 +87,15 @@ class SmartTV extends SmartDevice {
         }
         this.isMuted = true;
     }
+    unmute(): void {
+        if (!this.isOn) {
+            throw new Error("No se puede desmutear si la TV está apagada.");
+        }
+        this.isMuted = false;
+    }
+    muteStatus(): boolean {
+        return this.isMuted;
+    }
 
     getStatus(): string {
         return `La TV ${this.name} está ${this.isOn ? "prendida" : "apagada"} en el canal ${this.currentChannel}.`;
@@ -94,9 +103,9 @@ class SmartTV extends SmartDevice {
 }
 
 class SmartSpeaker extends SmartDevice {
-    volume: number;
-    currentSong: string;
-    isMuted: boolean;
+    protected volume: number;
+    protected currentSong: string;
+    protected isMuted: boolean;
 
     constructor(id: string, name: string) {
         super(id, name);
@@ -132,6 +141,15 @@ class SmartSpeaker extends SmartDevice {
         }
         this.isMuted = true;
     }
+    unmute(): void {
+        if (!this.isOn) {
+            throw new Error("No se puede desmutear si el parlante está apagado.");
+        }
+        this.isMuted = false;
+    }
+    muteStatus(): boolean {
+        return this.isMuted;
+    }
 
     getStatus(): string {
         return `El parlante ${this.name} está ${this.isOn ? "prendida" : "apagada"} con la canción ${this.currentSong}.`;
@@ -139,7 +157,7 @@ class SmartSpeaker extends SmartDevice {
 }
 
 class SmartLight extends SmartDevice {
-    brightness: number;
+    protected brightness: number;
 
     constructor(id: string, name: string) {
         super(id, name);
@@ -168,7 +186,7 @@ class SmartLight extends SmartDevice {
 }
 
 class SmartDeviceManager {
-    smart_devices: SmartDevice[];
+    protected smart_devices: SmartDevice[];
 
     constructor() {
         this.smart_devices = [];
@@ -196,10 +214,13 @@ class SmartDeviceManager {
         if(device === null || device === undefined) {
             throw new Error("El dispositivo no puede ser nulo o indefinido.");
         }
-        if(!this.deviceExists(device)) {
+        const index = this.smart_devices.findIndex(
+            dev => dev.getId() === device.getId()
+        );
+        if (index === -1) {
             throw new Error("El dispositivo no existe en el administrador.");
         }
-        this.smart_devices.splice(this.smart_devices.indexOf(device), 1);
+        this.smart_devices.splice(index, 1);
     }
     turnOnAllDevices(): void {
         for(const device of this.smart_devices) {
@@ -226,8 +247,12 @@ class SmartDeviceManager {
         if(!this.deviceExists(device)) {
             throw new Error("El dispositivo no existe en el administrador.");
         }
-        if(device instanceof SmartTV || device instanceof SmartSpeaker) {
-            return device.isMuted;
+        for(const dev of this.smart_devices) {
+            if (device instanceof SmartTV || device instanceof SmartSpeaker) {
+                if (device.muteStatus()) {
+                    return true;
+                }
+            }
         }
         return false;
     }
